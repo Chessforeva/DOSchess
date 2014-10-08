@@ -37,3 +37,4 @@ Conclusion
 Great platform for simple Tetris programming.
 
 
+DOS4GW has been replaced with DOS32
