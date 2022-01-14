@@ -23,8 +23,8 @@ void printCR(int c,int r, char *s)
 void DispLogoTexts(void)
 {
 	printCR(0,0,"DOS chess");
-  printCR(0,1,"for DosBox");
-  printCR(0,2," 2013");
+  printCR(0,1,"forDosBox");
+  printCR(0,2,"2013-2022");
 
 	printCR(70,0," uses");
 	printCR(70,1,"GnuChess3");
@@ -40,7 +40,10 @@ void DispLogoTexts(void)
 char *BMPboard;					// board image
 char *BMPbrdBk[64];			// background for each square
 char *BMPpiece[12];			// each type of piece
-char *BMPpcMsk[12];			// mask 
+char *BMPpcMsk[12];			// mask
+
+char *rd_buf_bo;				// buffers for board reading
+char *rd_buf_pc;				// buffers for pieces reading
 
 struct parmsBoard
 {
@@ -57,60 +60,130 @@ struct parmsBoard
 	int sw;		// square width
 	int sh;		// square height
 } Board;
-  
+
+
+#define BI2_READING 1
+
+void GetImage( int x, int y, int wi, int hi, char *addr, char I, char N ) {
+	
+	int X,Y;
+	FILE *f;
+	char *p = addr;
+	char *fn = "Board/dat??.bi2";
+	int W = wi-x+1, H = hi-y+1;
+	int Cnt = 6+(W*H);
+	
+	
+	fn[9] = I;
+	fn[10] = N;
+	
+ 	_getimage( x, y, wi, hi, addr );
+
+	if(BI2_READING) {
+		
+		f = fopen( fn, "rb" );
+		fread(p,Cnt,1,f);
+	 	fclose(f);
+		
+	}
+	else		// writing to .bi2 image files
+	 {
+		f = fopen( fn, "wb" );
+		fwrite(p,Cnt,1,f);
+		fclose(f);
+	 }	 
+
+}
+
 void ReadBMPpiece(char *pieceBMPfile, int i,  int x0, int y0, int w,int h )
 {
   int c,x,y;
+  char *p;
   long sz = _imagesize( x0, y0,x0+w-1, y0+h-1 );
-	FILE *f = fopen(pieceBMPfile, "r");
 
+	FILE *f;
+	
+	if(!BI2_READING) {
+		
+	f = fopen(pieceBMPfile, "r");
+	
 	for(y=0;y<h;y++)
+	{
+	 p = rd_buf_pc;
+	 fread(p,w,1,f);		
 	 for(x=0;x<w;x++)
 	  {
-	  	fread(&c,1,1,f);
+	  	c = *(p++);
 	  	_setcolor(c);
 	  	_setpixel( x0+x, y0+y );
 	  }
+	}
 	fclose(f);
+	
+	}
+	
 	
 	// save piece image	  
   BMPpiece[i] = malloc(sz);
-  BMPpcMsk[i] = malloc(sz);
   
-	_getimage( x0, y0, x0+w-1, y0+h-1, BMPpiece[i] );
+	GetImage( x0, y0, x0+w-1, y0+h-1, BMPpiece[i], 'A', (char) ('A'+i) );
+
+	_setcolor(0);
+
+	sz = _imagesize( x0, y0, x0+w-1, y0+h-1 );
+	BMPpcMsk[i] = malloc(sz);
+  
+	if(!BI2_READING) {
 
 	// create mask-image for piece
 	_putimage( x0, y0, BMPpiece[i], _GPRESET  );	// inverted
-	_setcolor(0);
 	for(y=0;y<h;y++)
 	 for(x=0;x<w;x++)
 	  {
 			c = _getpixel( x0+x, y0+y );
 			if(c<255)	_setpixel( x0+x, y0+y );
 	  }
-	_getimage( x0, y0, x0+w-1, y0+h-1, BMPpcMsk[i] );	
+	}
+	
+	GetImage( x0, y0, x0+w-1, y0+h-1, BMPpcMsk[i], 'B', (char)('A'+i) );	
 }
 
 
 void ReadBMPboard(void)
 {
   int x,y,c;
+  char *p;
   short x1,y1,i;
   long sz = _imagesize( Board.x0, Board.y0, Board.x0+Board.w, Board.y0+Board.h );
   
-	FILE *f = fopen("Board/BO.bin", "r");			// Already prepared in binary (bmp to bin)
+	FILE *f;
+	
+	if(!BI2_READING) {
+			
+
+	f = fopen("Board/BO.bin", "r");			// Already prepared in binary (bmp to bin)
 
 	for(y=0;y<Board.h;y++)
+	 {
+	 p = rd_buf_bo;
+	 fread(p,Board.w,1,f);
 	 for(x=0;x<Board.w;x++)
 	  {
-	  	fread(&c,1,1,f);
+	  	c = *(p++);
 	  	_setcolor(c);
 	  	_setpixel( Board.x0+x, Board.y0+y );
 	  }
+	 }
 	fclose(f);
+	
+	}
 		  
   BMPboard = malloc(sz);
-	_getimage( Board.x0, Board.y0, Board.x0+Board.w, Board.y0+Board.h, BMPboard );
+	GetImage( Board.x0, Board.y0, Board.x0+Board.w, Board.y0+Board.h, BMPboard, 'C', '0' );
+
+	if(BI2_READING) {
+	_putimage( Board.x0, Board.y0, BMPboard, _GPSET  );
+	}
 	
 	i=0;
 	sz = _imagesize( 0, 0, Board.sw, Board.sh+6 );
@@ -120,8 +193,9 @@ void ReadBMPboard(void)
 			x = (Board.x0+Board.mL)+ (x1*Board.sw);
 			y = (Board.y0+Board.mU)+ (y1*Board.sh);
 			BMPbrdBk[i] = malloc(sz);
-			_getimage( x, y-3, x+Board.sw, y+Board.sh+3, BMPbrdBk[i] );	
+			GetImage( x, y-3, x+Board.sw, y+Board.sh+3, BMPbrdBk[i],  (char) ('0'+x1),  (char) ('0'+y1) );	
 			}
+			
 }
 
 
@@ -138,6 +212,10 @@ int pieceI( char piece )
 void ReadBitmaps(void)
 {
  // screen size 640 x 480
+ 
+ rd_buf_bo = malloc(1024);
+ rd_buf_pc = malloc(200);
+ 
  ReadBMPboard();
  ReadBMPpiece("Board/WP.bin", pieceI('P'), 10, 60, 58, 59 );
  ReadBMPpiece("Board/WN.bin", pieceI('N'), 10, 120, 58, 59 );
@@ -152,6 +230,10 @@ void ReadBitmaps(void)
  ReadBMPpiece("Board/BR.bin", pieceI('r'), 570, 240, 58, 59 );
  ReadBMPpiece("Board/BQ.bin", pieceI('q'), 570, 302, 58, 65 );
  ReadBMPpiece("Board/BK.bin", pieceI('k'), 570, 370, 58, 59 );
+
+ free(rd_buf_bo);
+ free(rd_buf_pc);
+ 
 }
 
 struct LastX			// save last calculations
@@ -176,7 +258,7 @@ void PutPiece(char at[2], char piece)
   			Board.y0 + Board.h - Board.mD - (Board.sh * (r+1)) :
   			Board.y0 + Board.mU + (Board.sh * r);
   			
-  if(piece=='Q' || piece == 'q')	y-=4;			// larger piece :)
+  if(piece=='Q' || piece == 'q')	y-=4;			// larger piece :)s
 	_putimage( x, y, BMPpcMsk[i], _GAND  );
 	_putimage( x, y, BMPpiece[i], _GOR  );
 	
@@ -567,6 +649,8 @@ void StartBoard(void)
 void FreeAllocated(void)
 {
   int i;
+  free(rd_buf_bo);
+  free(rd_buf_pc);  
   for(i=0;i<12;i++)
    {
    	free(BMPpiece[i]);

@@ -1,6 +1,7 @@
 DOS chess project by chessforeva
-http://chessforeva.blogspot.com/2013/02/dos-chess-project.html
-feb.2013
+http://chessforeva.blogspot.com
+feb.2013,
+   jan.2022(slow loading bugfix)
 
 Important
 ---------
@@ -37,4 +38,3 @@ Conclusion
 Great platform for simple Tetris programming.
 
 
-DOS4GW has been replaced with DOS32
