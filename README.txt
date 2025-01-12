@@ -2,6 +2,7 @@ DOS chess project by chessforeva
 http://chessforeva.blogspot.com
 feb.2013,
    jan.2022(slow loading bugfix)
+   jan.2025(added buttons for mouse)
 
 Important
 ---------

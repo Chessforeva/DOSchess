@@ -23,5 +23,9 @@ bmp2bin.exe -1 colp256.rgb WP.bmp WP.bin
 bmp2bin.exe -1 colp256.rgb WQ.bmp WQ.bin
 bmp2bin.exe -1 colp256.rgb WR.bmp WR.bin
 
+
+bmp2bin.exe -1 colp256.rgb BUT.bmp BUT.bin
+
+
 bmp2bin.exe
 pause

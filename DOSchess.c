@@ -8,6 +8,7 @@
 int main(int arg_c, char *arg_v[])
 {
   char inkey;
+  
   int AutoGame;
   
   ChDos_Init();												// chess interface in gnu3ch
@@ -18,6 +19,14 @@ int main(int arg_c, char *arg_v[])
        
   while( !kbhit() || (inkey=getch())!=27 )
   {
+   if(INKEY) {
+	if(INKEY<10) INKEY--;
+	else {
+		inkey = INKEY;
+		INKEY = 9;
+	}
+   }
+	
    if(inkey)
    	{
  	  if(inkey=='a')	{ PressedDemoGame(); AutoGame=1; }

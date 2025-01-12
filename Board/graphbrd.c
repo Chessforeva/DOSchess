@@ -10,6 +10,7 @@
 */
 
 int AutoGame;
+int INKEY;
 
 // sets cursor and prints text
 void printCR(int c,int r, char *s)
@@ -23,16 +24,18 @@ void printCR(int c,int r, char *s)
 void DispLogoTexts(void)
 {
 	printCR(0,0,"DOS chess");
-  printCR(0,1,"forDosBox");
-  printCR(0,2,"2013-2022");
+	printCR(0,1,"forDosBox");
+	printCR(0,2,"2013-2025");
 
 	printCR(70,0," uses");
 	printCR(70,1,"GnuChess3");
-  printCR(71,4,"controls");
-  printCR(71,5,"<-mouse");	
-  printCR(73,6,"u-undo");		
-  printCR(73,7,"n-new");
-  printCR(73,8,"a-demo");  
+	printCR(71,4,"controls");
+	printCR(71,5,"<-mouse");
+
+// see DrawButtons below	
+	printCR(72,9," u-undo");		
+	printCR(72,12," n-new");
+	printCR(72,15," a-demo");
 }
 
 /* Bitmaps of board and pieces */
@@ -95,6 +98,31 @@ void GetImage( int x, int y, int wi, int hi, char *addr, char I, char N ) {
 
 }
 
+void DrawSimpleBMPfile(char *pieceBMPfile, int x0, int y0, int w,int h )
+{
+  int c,x,y;
+  char *p;
+  long sz = _imagesize( x0, y0,x0+w-1, y0+h-1 );
+
+	FILE *f;
+		
+	f = fopen(pieceBMPfile, "r");
+	
+	for(y=0;y<h;y++)
+	{
+	 p = rd_buf_pc;
+	 fread(p,w,1,f);		
+	 for(x=0;x<w;x++)
+	  {
+	  	c = *(p++);
+	  	_setcolor(c);
+	  	_setpixel( x0+x, y0+y );
+	  }
+	}
+	fclose(f);
+	
+}
+	
 void ReadBMPpiece(char *pieceBMPfile, int i,  int x0, int y0, int w,int h )
 {
   int c,x,y;
@@ -230,7 +258,7 @@ void ReadBitmaps(void)
  ReadBMPpiece("Board/BR.bin", pieceI('r'), 570, 240, 58, 59 );
  ReadBMPpiece("Board/BQ.bin", pieceI('q'), 570, 302, 58, 65 );
  ReadBMPpiece("Board/BK.bin", pieceI('k'), 570, 370, 58, 59 );
-
+  
  free(rd_buf_bo);
  free(rd_buf_pc);
  
@@ -624,7 +652,13 @@ void _DispStatus(void)
   	printCR(70,29,(ChDos_IsCheck() ? "check+" : "      ")); 
   }
 }
-	 	
+
+void DrawButtons(void)
+{
+DrawSimpleBMPfile("Board/BUT.bin", 562, 112, 58, 59 );
+DrawSimpleBMPfile("Board/BUT.bin", 562, 172, 58, 59 );
+DrawSimpleBMPfile("Board/BUT.bin", 562, 232, 58, 59 );
+}
 		
 /* Initialization on starting */
 void StartBoard(void)
@@ -642,8 +676,10 @@ void StartBoard(void)
 	SetUpStartingPieces();
 	MemAllocRotator(&PX);
 	AnimMemAlloc(&AN);
+	DrawButtons();
 	DispLogoTexts();
 	AutoGame = 0;
+	INKEY = 0;
 }
 
 void FreeAllocated(void)
@@ -701,7 +737,44 @@ void UpdateGraphicsFps (void)
 		}			
 }
 
-		
+
+/* undo move */
+void UndoPressedMove(void)
+{
+ if( !AN.show )
+  {
+	 ClearMouse(); Mouse.Was=2;
+	 ClearRotator( &PX );					
+	 PX.cnt = 0;
+	 PX.show = 0;
+	 
+	 ChDos_UndoMove();
+	 
+	 RedrawBoard();
+  }
+}
+
+/* NewGame */
+void NewGamePressed(void)
+{
+  AN.show = 0;		// stop animation
+  	
+  chDos_SetNewGame();
+
+  ClearMouse(); Mouse.Was=2;	// hide mouse
+	ClearRotator( &PX );			 						
+	PX.cnt = 0;			// stop rotating pixels
+	PX.show = 0;
+	AutoGame = 0;
+	RedrawBoard();
+
+}
+
+void PressedDemoGame(void)
+{
+	AutoGame = 1;
+}
+
 /* mouse has been pressed */
 void MousePressed( int x, int y )
 {
@@ -751,41 +824,17 @@ void MousePressed( int x, int y )
  						
  						} 			 	
  		}
-}
+	
+	if( (!INKEY) && ( x > 560 && x< 630) ) {
+		if( Y > 112 && Y< 169  && (!AutoGame) ) {
+			INKEY = 'u';
+		}
+		if( Y > 172 && Y< 229 ) {
+			INKEY = 'n';
+		}
+		if( Y > 232 && Y< 289 ) {
+			INKEY = 'a';
+		}
 
-/* undo move */
-void UndoPressedMove(void)
-{
- if( !AN.show )
-  {
-	 ClearMouse(); Mouse.Was=2;
-	 ClearRotator( &PX );					
-	 PX.cnt = 0;
-	 PX.show = 0;
-	 
-	 ChDos_UndoMove();
-	 
-	 RedrawBoard();
-  }
-}
-
-/* NewGame */
-void NewGamePressed(void)
-{
-  AN.show = 0;		// stop animation
-  	
-  chDos_SetNewGame();
-
-  ClearMouse(); Mouse.Was=2;	// hide mouse
-	ClearRotator( &PX );			 						
-	PX.cnt = 0;			// stop rotating pixels
-	PX.show = 0;
-	AutoGame = 0;
-	RedrawBoard();
-
-}
-
-void PressedDemoGame(void)
-{
-	AutoGame = 1;
+	}
 }
