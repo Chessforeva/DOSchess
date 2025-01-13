@@ -4,6 +4,13 @@ feb.2013,
    jan.2022(slow loading bugfix)
    jan.2025(added buttons for mouse)
 
+Online versions:
+https://ccwars.netlify.app/doschess.htm
+https://chessforeva.codeberg.page/js/doschess.htm
+
+Also can download https://ccwars.netlify.app/doschess.zip
+and drop on https://www.neilb.net/doswasmx/
+
 Important
 ---------
 Go full screen (Alt+Enter) when running on DosBox!
